@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Graph author="Branislav Repcek" created="Wed Mar 20 18:10:36 CET 2019" guiVersion="7.6.0.14" id="1439320926479" licenseCode="CLP1DJAVLI56083535BY" licenseType="Commercial" name="simpleTest" showComponentDetails="true">
+<Global>
+<Metadata id="Metadata6" previewAttachment="${DATAIN_DIR}/customers.txt" previewAttachmentCharset="UTF-8">
+<Record fieldDelimiter=";" label="customers.txt" name="customers" previewAttachment="${DATAIN_DIR}/customers.txt" previewAttachmentCharset="UTF-8" quoteChar="both" quotedStrings="false" recordDelimiter="\r\n" skipSourceRows="1" type="delimited">
+<Field label="﻿CUST_ID" name="CUST_ID" type="string"/>
+<Field label="CUST_NAME" name="CUST_NAME" type="string"/>
+<Field eofAsDelimiter="true" label="STREET" name="STREET" type="string"/>
+<Field label="CITY" name="CITY" type="string"/>
+<Field label="DISTRICT" name="STATE" type="string"/>
+<Field label="POST_CODE" name="ZIP_CODE" type="integer"/>
+</Record>
+</Metadata>
+<Metadata id="Metadata7" previewAttachmentCharset="ISO-8859-1">
+<Record fieldDelimiter="|" name="items" previewAttachmentCharset="ISO-8859-1" recordDelimiter="\r\n" skipSourceRows="0" type="delimited">
+<Field label="ID" name="ID" type="integer"/>
+<Field label="Beverage" name="Beverage" type="string"/>
+<Field label="Unit" name="Unit" type="string"/>
+<Field format="excel:0.00" label="Price" name="UnitPrice" type="decimal"/>
+</Record>
+</Metadata>
+<Metadata id="Metadata1">
+<Record fieldDelimiter="," name="JoinCustomers" previewAttachmentCharset="UTF-8" recordDelimiter="\n" type="delimited">
+<Field name="custId" type="string"/>
+<Field name="customerName" type="string"/>
+<Field name="totalQty" type="integer"/>
+<Field name="totalAmt" type="decimal"/>
+</Record>
+</Metadata>
+<Metadata id="Metadata0">
+<Record fieldDelimiter="|" name="OrderItems" recordDelimiter="\n" type="delimited">
+<Field name="customerId" type="string"/>
+<Field name="quantity" type="integer"/>
+<Field name="amount" type="decimal"/>
+</Record>
+</Metadata>
+<Metadata id="Metadata9" previewAttachment="${DATAIN_DIR}/orders.txt" previewAttachmentCharset="UTF-8">
+<Record label="orders" name="orders" previewAttachment="${DATAIN_DIR}/orders.txt" previewAttachmentCharset="UTF-8" recordDelimiter="\r\n" recordSize="1000" skipSourceRows="1" type="fixed">
+<Field name="orderId" size="10" type="integer"/>
+<Field name="custId" size="10" type="string"/>
+<Field name="itemId" size="8" type="integer"/>
+<Field name="qty" size="8" type="integer"/>
+<Field format="dd.MM.yyyy" name="transDate" size="10" type="date"/>
+</Record>
+</Metadata>
+<GraphParameters>
+<GraphParameterFile fileURL="workspace.prm"/>
+</GraphParameters>
+<Dictionary/>
+</Global>
+<Phase number="0">
+<Node aggregateKey="customerId" guiName="Aggregate" guiX="795" guiY="450" id="AGGREGATE" mapping="$customerId:=$customerId;$quantity:=sum($quantity);$amount:=sum($amount);" sorted="false" type="AGGREGATE"/>
+<Node charset="UTF-8" fileURL="${DATAIN_DIR}/customers.txt" guiName="Customers" guiX="70" guiY="125" id="CUSTOMERS" type="DATA_READER"/>
+<Node guiName="CustomerOrders" guiX="1270" guiY="300" id="CUSTOMER_ORDERS" joinKey="$customerId=$CUST_ID" type="EXT_HASH_JOIN">
+<attr name="transform"><![CDATA[//#CTL2
+
+// Transforms input record into output record.
+function integer transform() {
+	$out.0.custId = $in.0.customerId;
+	$out.0.customerName = $in.1.CUST_NAME;
+	$out.0.totalQty = $in.0.quantity;
+	$out.0.totalAmt = $in.0.amount;
+
+	return ALL;
+}
+// Called during component initialization.
+// function boolean init() {}
+
+// Called during each graph run before the transform is executed. May be used to allocate and initialize resources
+// required by the transform. All resources allocated within this method should be released
+// by the postExecute() method.
+// function void preExecute() {}
+
+// Called only if transform() throws an exception.
+// function integer transformOnError(string errorMessage, string stackTrace) {}
+
+// Called during each graph run after the entire transform was executed. Should be used to free any resources
+// allocated within the preExecute() method.
+// function void postExecute() {}
+
+// Called to return a user-defined error message when an error occurs.
+// function string getMessage() {}
+]]></attr>
+</Node>
+<Node guiName="FilterCustomers" guiX="320" guiY="250" id="FILTER_CUSTOMERS" type="EXT_FILTER">
+<attr name="filterExpression"><![CDATA[//#CTL2
+$in.0.STATE == "CA" || $in.0.STATE == "CO" || $in.0.STATE == "CT"]]></attr>
+</Node>
+<Node guiName="FilterItems" guiX="320" guiY="475" id="FILTER_ITEMS" type="EXT_FILTER">
+<attr name="filterExpression"><![CDATA[//#CTL2
+$in.0.Unit == "2-Liter"]]></attr>
+</Node>
+<Node guiName="FilterOrders" guiX="320" guiY="625" id="FILTER_ORDERS" type="EXT_FILTER">
+<attr name="filterExpression"><![CDATA[//#CTL2
+date2str($in.0.transDate, "yyyy") == "2014"]]></attr>
+</Node>
+<Node guiName="FilterTotalAmount" guiX="1020" guiY="400" id="FILTER_TOTAL_AMOUNT" type="EXT_FILTER">
+<attr name="filterExpression"><![CDATA[//#CTL2
+$in.0.quantity >= 30]]></attr>
+</Node>
+<Node fileURL="${DATAIN_DIR}/items.xlsx" guiName="Items" guiX="70" guiY="475" id="ITEMS" type="SPREADSHEET_READER"/>
+<Node fileURL="${DATAIN_DIR}/orders.txt" guiName="orders" guiX="70" guiY="800" id="ORDERS" type="DATA_READER"/>
+<Node guiName="OrderItems" guiX="570" guiY="550" id="ORDER_ITEMS" joinKey="$itemId=$ID" type="EXT_HASH_JOIN">
+<attr name="transform"><![CDATA[//#CTL2
+
+// Transforms input record into output record.
+function integer transform() {
+    $out.0.customerId = $in.0.custId;
+    $out.0.quantity   = $in.0.qty;
+    $out.0.amount     = $in.0.qty * $in.1.UnitPrice;
+
+    return ALL;
+}
+
+// Called during component initialization.
+// function boolean init() {}
+
+// Called during each graph run before the transform is executed. May be used to allocate and initialize resources
+// required by the transform. All resources allocated within this method should be released
+// by the postExecute() method.
+// function void preExecute() {}
+
+// Called only if transform() throws an exception.
+// function integer transformOnError(string errorMessage, string stackTrace) {}
+
+// Called during each graph run after the entire transform was executed. Should be used to free any resources
+// allocated within the preExecute() method.
+// function void postExecute() {}
+
+// Called to return a user-defined error message when an error occurs.
+// function string getMessage() {}
+]]></attr>
+</Node>
+<Node guiName="SortDesc" guiX="1495" guiY="250" id="SORT_DESC" sortKey="totalAmt(d)" sortOrder="descending" type="EXT_SORT"/>
+<Node charset="UTF-8" fileURL="${DATAOUT_DIR}/result.csv" guiName="WriteToCSV" guiX="1720" guiY="225" id="WRITE_TO_CSV" outputFieldNames="true" quoteCharacter="&quot;" quotedStrings="true" type="FLAT_FILE_WRITER"/>
+<Edge fromNode="AGGREGATE:0" guiBendpoints="" guiRouter="Manhattan" id="Edge32" inPort="Port 0 (in)" metadata="Metadata0" outPort="Port 0 (out)" toNode="FILTER_TOTAL_AMOUNT:0"/>
+<Edge fromNode="CUSTOMERS:0" guiBendpoints="" guiRouter="Manhattan" id="Edge0" inPort="Port 0 (in)" metadata="Metadata6" outPort="Port 0 (output)" toNode="FILTER_CUSTOMERS:0"/>
+<Edge fromNode="CUSTOMER_ORDERS:0" guiBendpoints="" guiRouter="Manhattan" id="Edge36" inPort="Port 0 (in)" metadata="Metadata1" outPort="Port 0 (out)" toNode="SORT_DESC:0"/>
+<Edge fromNode="FILTER_CUSTOMERS:0" guiBendpoints="" guiRouter="Manhattan" id="Edge29" inPort="Port 1 (slave)" outPort="Port 0 (accepted)" toNode="CUSTOMER_ORDERS:1"/>
+<Edge fromNode="FILTER_ITEMS:0" guiBendpoints="" guiRouter="Manhattan" id="Edge28" inPort="Port 1 (slave)" outPort="Port 0 (accepted)" toNode="ORDER_ITEMS:1"/>
+<Edge fromNode="FILTER_ORDERS:0" guiBendpoints="" guiRouter="Manhattan" id="Edge27" inPort="Port 0 (driver)" outPort="Port 0 (accepted)" toNode="ORDER_ITEMS:0"/>
+<Edge fromNode="FILTER_TOTAL_AMOUNT:0" guiBendpoints="" guiRouter="Manhattan" id="Edge33" inPort="Port 0 (driver)" outPort="Port 0 (accepted)" toNode="CUSTOMER_ORDERS:0"/>
+<Edge fromNode="ITEMS:0" guiBendpoints="" guiRouter="Manhattan" id="Edge3" inPort="Port 0 (in)" metadata="Metadata7" outPort="Port 0 (output)" toNode="FILTER_ITEMS:0"/>
+<Edge fromNode="ORDERS:0" guiBendpoints="" guiRouter="Manhattan" id="Edge2" inPort="Port 0 (in)" metadata="Metadata9" outPort="Port 0 (output)" toNode="FILTER_ORDERS:0"/>
+<Edge fromNode="ORDER_ITEMS:0" guiBendpoints="" guiRouter="Manhattan" id="Edge30" inPort="Port 0 (in)" metadata="Metadata0" outPort="Port 0 (out)" toNode="AGGREGATE:0"/>
+<Edge fromNode="SORT_DESC:0" guiBendpoints="" guiRouter="Manhattan" id="Edge37" inPort="Port 0 (in)" outPort="Port 0 (out)" toNode="WRITE_TO_CSV:0"/>
+</Phase>
+</Graph>

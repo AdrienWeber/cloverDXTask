@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+
+# Eclipse / CloverDX Workspace-Metadaten (NICHT ins Projekt!)
+.metadata/
+
+# Build / Runtime
+bin/
+tmp/
+data-tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+
+# Logs
+*.log
+
+# CloverDX Output
+data-out/
+
+# Secrets / lokale Konfig
+*.secret
+*.key
+.env
+.env.local
